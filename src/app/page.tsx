@@ -1,95 +1,98 @@
-import Image from "next/image";
+import { use, Suspense } from "react";
+import { getHouses } from "./api/houses/route";
+import { getMember } from "./api/members/[memberId]/route";
+import {
+  Card,
+  CardContent,
+  Divider,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Stack,
+  Typography,
+} from "@mui/material";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const houses = use(getHouses());
+
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+      <Typography variant="h1" sx={{ marginTop: 3, marginBottom: 3 }}>
+        A Song of Ice and Fire Deathlist
+      </Typography>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <Suspense fallback={<p>loading...</p>}>
+        <Grid container spacing={2} columns={12}>
+          {houses?.map((house) => {
+            const houseId: string = house.url
+              .substring(house.url.lastIndexOf("/") + 1)
+              .toString();
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+            return (
+              <Grid item key={houseId} xs={12} md={4}>
+                <Card sx={{ height: "100%" }}>
+                  <CardContent>
+                    <Typography variant="h2" gutterBottom textAlign="center">
+                      {house.name}
+                    </Typography>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
+                    <Divider />
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
+                    {house?.swornMembers.length ? (
+                      <List
+                        sx={{
+                          maxHeight: 250,
+                          overflowY: "scroll",
+                        }}
+                      >
+                        {house.swornMembers.map((member) => {
+                          const memberId: string = member
+                            .substring(member.lastIndexOf("/") + 1)
+                            .toString();
+                          const character = use(getMember(memberId));
+                          const isDead = character.died !== "";
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+                          return (
+                            <ListItem key={memberId} disablePadding>
+                              <ListItemText>
+                                <Stack
+                                  direction="row"
+                                  justifyContent="space-between"
+                                >
+                                  <Typography>{character?.name}</Typography>
+                                  <Typography textAlign={"left"}>
+                                    {isDead
+                                      ? `Died ${
+                                          character.died
+                                            .charAt(0)
+                                            .toLowerCase() +
+                                          character.died.slice(1)
+                                        }`
+                                      : `Alive`}
+                                  </Typography>
+                                </Stack>
+                                <Divider />
+                              </ListItemText>
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    ) : (
+                      <ListItem disablePadding>
+                        <ListItemText>
+                          This house has no sworn members.
+                        </ListItemText>
+                      </ListItem>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Suspense>
     </main>
   );
 }
